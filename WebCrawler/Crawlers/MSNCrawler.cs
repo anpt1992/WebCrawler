@@ -13,20 +13,15 @@ namespace WebCrawler.Crawlers
     public class MSNCrawler : ICrawler
     {
         public MSNCrawler() { }
-        public List<string> GetPages()
+        public Dictionary<string, string> GetPages()
         {
-            List<string> pages = new List<string>();
-            pages.Add("https://www.msn.com/en-za");
-
-
+            var pages = new Dictionary<string, string>();
+            pages.Add("0", "https://www.msn.com/en-za");
 
             return pages;
         }
-        public List<News> GetItemsPages()
-        {
-            string urlTarget = "https://www.msn.com/en-za";
-            List<News> items = new List<News>();
-
+        public List<News> GetItemsPages(string catId, string urlTarget)
+        {            
             HtmlWeb htmlWeb = new HtmlWeb()
             {
                 AutoDetectEncoding = false,
@@ -35,6 +30,14 @@ namespace WebCrawler.Crawlers
             };
 
             HtmlDocument document = htmlWeb.Load(urlTarget);
+
+            var items = GetHomePage(document, catId);
+
+            return items;
+        }
+        public List<News> GetHomePage(HtmlDocument document,string catId)
+        {
+            List<News> items = new List<News>();
 
             RemoveNode(document, "//div[@data-section-id='stripe.video']");
             RemoveNode(document, "//div[@data-section-id='stripe.photos']");
@@ -52,65 +55,100 @@ namespace WebCrawler.Crawlers
                 news.sourceLink = link;
                 var title = linkNode.QuerySelector(".caption > .title").InnerText;
                 news.title = title;
+                var eSource = linkNode.QuerySelectorAll(".caption > .sourcename > img");
+                if (!(eSource.Count() == 0))
+                {
+                    var source = eSource.First().GetAttributeValue("alt", "");
+                    news.source = source.Substring(0, source.Length - 5);
+                }
+                news.catid = catId;
                 items.Add(news);
             }
 
-            //var mediumaItems = document.DocumentNode.QuerySelectorAll(".mediuma").ToList();
-            //foreach (var item in mediumaItems)
-            //{
-            //    if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo"))
-            //    {
-            //        continue;
-            //    }
-            //    var news = new News();
-            //    var linkNode = item.QuerySelector("a");
-            //    var link = WraperUrl(linkNode.Attributes["href"].Value);
-            //    news.sourceLink = link;
-            //    var title = linkNode.QuerySelector(".caption > .title").InnerText;
-            //    news.title = title;
-            //    items.Add(news);
-            //}
+            var mediumaItems = document.DocumentNode.QuerySelectorAll(".mediuma").ToList();
+            foreach (var item in mediumaItems)
+            {
+                if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo"))
+                {
+                    continue;
+                }
+                var news = new News();
+                var linkNode = item.QuerySelector("a");
+                var link = WraperUrl(linkNode.Attributes["href"].Value);
+                news.sourceLink = link;
+                var title = linkNode.QuerySelector(".caption > .title").InnerText;
+                news.title = title;
+                var eSource = linkNode.QuerySelectorAll(".caption > .sourcename > img");
+                if (!(eSource.Count() == 0))
+                {
+                    var source = eSource.First().GetAttributeValue("alt", "");
+                    news.source = source.Substring(0, source.Length - 5);
+                }
+                news.catid = catId;
+                items.Add(news);
+            }
 
-            //var hasimageItems = document.DocumentNode.QuerySelectorAll(".swipenav > .hasimage").ToList();
-            //foreach (var item in hasimageItems)
-            //{
-            //    if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo"))
-            //    {
-            //        continue;
-            //    }
-            //    var news = new News();
-            //    var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
-            //    news.sourceLink = link;
-            //    var title = item.QuerySelector(".caption > .title").InnerText;
-            //    news.title = title;
-            //    items.Add(news);
-            //}
+            var hasimageItems = document.DocumentNode.QuerySelectorAll(".swipenav > .hasimage").ToList();
+            foreach (var item in hasimageItems)
+            {
+                var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
+                if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo") || !link.Contains("/en-za/"))
+                {
+                    continue;
+                }
+                var news = new News();
+                news.sourceLink = link;
+                var title = item.QuerySelector(".caption > .title").InnerText;
+                news.title = title;
+                var eSource = item.QuerySelectorAll(".caption > .sourcename > img");
+                if (!(eSource.Count() == 0))
+                {
+                    var source = eSource.First().GetAttributeValue("alt", "");
+                    news.source = source.Substring(0, source.Length - 5);
+                }
+                news.catid = catId;
+                items.Add(news);
+            }
 
-            //var tertiaryItems = document.DocumentNode.QuerySelectorAll(".paging-container > .stripecontent > .tertiary > li").ToList();
-            //foreach (var item in tertiaryItems)
-            //{
-            //    var news = new News();
-            //    var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
-            //    if (item.GetClasses().Contains("video") || link.Contains("/lifestyle/horoscope"))
-            //    {
-            //        continue;
-            //    }
-            //    news.sourceLink = link;
-            //    items.Add(news);
-            //}
+            var tertiaryItems = document.DocumentNode.QuerySelectorAll(".paging-container > .stripecontent > .tertiary > li").ToList();
+            foreach (var item in tertiaryItems)
+            {
+                var news = new News();
+                var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
+                if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo") || link.Contains("/lifestyle/horoscope"))
+                {
+                    continue;
+                }
+                news.sourceLink = link;
+                var eSource = item.QuerySelectorAll("a > div > img");
+                if (!(eSource.Count() == 0))
+                {
+                    var source = eSource.First().GetAttributeValue("alt", "");
+                    news.source = source.Substring(0, source.Length - 5);
+                }
+                news.catid = catId;
+                items.Add(news);
+            }
 
-            //var secondaryItems = document.DocumentNode.QuerySelectorAll(".paging-container > .stripecontent > .secondary > li").ToList();
-            //foreach (var item in secondaryItems)
-            //{
-            //    if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo"))
-            //    {
-            //        continue;
-            //    }
-            //    var news = new News();
-            //    var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
-            //    news.sourceLink = link;
-            //    items.Add(news);
-            //}
+            var secondaryItems = document.DocumentNode.QuerySelectorAll(".paging-container > .stripecontent > .secondary > li").ToList();
+            foreach (var item in secondaryItems)
+            {
+                var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
+                if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo") || link.Contains("/lifestyle/horoscope"))
+                {
+                    continue;
+                }
+                var news = new News();
+                news.sourceLink = link;
+                var eSource = item.QuerySelectorAll("a > div > img");
+                if (!(eSource.Count() == 0))
+                {
+                    var source = eSource.First().GetAttributeValue("alt", "");
+                    news.source = source.Substring(0, source.Length - 5);
+                }
+                news.catid = catId;
+                items.Add(news);
+            }
 
             var newlistItems = document.DocumentNode.QuerySelectorAll(".newlist > * li").ToList();
             foreach (var item in newlistItems)
@@ -122,9 +160,11 @@ namespace WebCrawler.Crawlers
                 var news = new News();
                 var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
                 news.sourceLink = link;
+                var source = item.QuerySelector("a > .sourcename > img").GetAttributeValue("alt", "");
+                news.source = source.Substring(0, source.Length - 5);
+                news.catid = catId;
                 items.Add(news);
             }
-
             return items;
         }
         public News ReadItem(News news)
@@ -142,9 +182,9 @@ namespace WebCrawler.Crawlers
                 news.title = document.DocumentNode.QuerySelector(".collection-headline-flex > h1").InnerText.Trim();
             }
             if (news.thumb == null)
-            {                
-                news.thumb = document.DocumentNode.SelectSingleNode("//meta[@property='og:image']").GetAttributeValue("content",null);
-            }      
+            {
+                news.thumb = document.DocumentNode.SelectSingleNode("//meta[@property='og:image']").GetAttributeValue("content", null);
+            }
             string strCreatedDate = document.DocumentNode.QuerySelector("time").GetAttributeValue("datetime", null);
 
             news.createdDate = DateTime.ParseExact(strCreatedDate, "yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);

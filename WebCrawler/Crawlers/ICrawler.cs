@@ -7,6 +7,6 @@ namespace WebCrawler.Crawlers
 {
     interface ICrawler
     {
-        List<string> GetPages();
+        Dictionary<string, string> GetPages();
     }
 }

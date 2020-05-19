@@ -15,12 +15,12 @@ namespace WebCrawler.Controllers
         public string Index()
         {
             MSNCrawler msn = new MSNCrawler();
-            //List<string> pages = msn.GetPages();
-            //foreach(var page in pages)
-            //{
-            var items = msn.GetItemsPages();
-            items = items.Select(item => msn.ReadItem(item)).ToList();
-            //}    
+            Dictionary<string, string> pages = msn.GetPages();
+            foreach (var page in pages)
+            {
+                var items = msn.GetItemsPages(page.Key,page.Value);
+                items = items.Select(item => msn.ReadItem(item)).ToList();
+            }
             return "This is my default action...";
         }
     }
