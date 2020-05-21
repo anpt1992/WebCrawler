@@ -216,7 +216,7 @@ namespace WebCrawler.Crawlers
                 }
                 else if (eachNode.QuerySelectorAll("a").ToList().Count != 0)
                 {
-                    var str = StripHTML(eachNode.InnerHtml);
+                    var str = StripHTML(eachNode.InnerHtml.Replace("\n;", ""));
                     pList.Add("<p>" + str + "</p>");
                     pListContent.Add(HtmlNode.CreateNode("<p>" + str + "</p>"));
                 }
@@ -238,7 +238,7 @@ namespace WebCrawler.Crawlers
                     eachNode.RemoveAllChildren();
                     eachNode.AppendChild(HtmlNode.CreateNode("<img src=\"" + imgSrc + "\"/>"));
                     eachNode.AppendChild(HtmlNode.CreateNode(strCaption));
-                    pList.Add(eachNode.OuterHtml);
+                    pList.Add(eachNode.OuterHtml.Replace("\n;", ""));
                 }
                 else
                 {
@@ -249,7 +249,7 @@ namespace WebCrawler.Crawlers
                         continue;
                     }
                     eachNode.Attributes.RemoveAll();
-                    pList.Add(eachNode.OuterHtml);
+                    pList.Add(eachNode.OuterHtml.Replace("\n;", ""));
                     pListContent.Add(eachNode);
                 }
             }
