@@ -21,5 +21,6 @@ namespace WebCrawler.Models
         public DateTime createdDate { get; set; }       
         public bool isVideo { get; set; }
         public DateTime publishedDate { get; set; }
+        public int nextpage { get; set; }
     }
 }

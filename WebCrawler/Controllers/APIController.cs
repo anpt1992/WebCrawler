@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PagedList;
 using WebCrawler.Models;
 using WebCrawler.Services;
 
@@ -24,16 +25,19 @@ namespace WebCrawler.Controllers
         }
 
         [HttpGet("en/get_arc_by_catid")]       
-        public ActionResult<List<NewsByCategory>> GetArcByCategory([FromQuery] string catid)
+        public ActionResult<List<NewsByCategory>> GetArcByCategory([FromQuery] string catid, int page)
         {
             var news = _newsService.GetByCategory(catid);
+           var newsPaged= news.ToPagedList(page, 50).ToList();
 
             if (news == null)
             {
                 return NotFound();
             }
-
-            return _mapper.Map<List<News>, List<NewsByCategory>>(news);
+            var nextPage = (newsPaged.Count < 50) ? page : page + 1;
+            var newsPageCat = _mapper.Map<List<News>, List<NewsByCategory>>(newsPaged);
+            newsPageCat.All(i => { i.nextpage = nextPage; return true; });
+            return newsPageCat;
         }
 
         [HttpGet("en/get_noi_dung_tin_new")]      
