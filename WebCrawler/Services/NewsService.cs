@@ -1,4 +1,6 @@
 ﻿using MongoDB.Driver;
+using MongoDB.Bson;
+using MongoDB.Driver.Builders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,8 +17,12 @@ namespace WebCrawler.Services
         {
             var client = new MongoClient(settings.ConnectionString);
             var database = client.GetDatabase(settings.DatabaseName);
-
             _news = database.GetCollection<News>(settings.NewsCollectionName);
+            var indexOptions = new CreateIndexOptions();
+            indexOptions.Unique = true;
+            var indexKeys = Builders<News>.IndexKeys.Ascending(i => i.sourceLink);
+            var indexModel = new CreateIndexModel<News>(indexKeys, indexOptions);
+            _news.Indexes.CreateOne(indexModel);
         }
 
         public List<News> Get() =>
@@ -24,7 +30,10 @@ namespace WebCrawler.Services
 
         public News Get(string id) =>
             _news.Find<News>(news => news.id == id).FirstOrDefault();
-
+        public List<News> GetByCategory(string catid)
+        {
+            return _news.Find(news => true).ToList();
+        }
         public News Create(News news)
         {
             _news.InsertOne(news);
@@ -33,11 +42,15 @@ namespace WebCrawler.Services
 
         public List<News> SaveAll(List<News> news)
         {
-           
+            try
+            {
                 _news.InsertMany(news);
-                return news;
-           
-
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            return news;
         }
 
         public void Update(string id, News newsIn) =>

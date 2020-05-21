@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -35,7 +36,16 @@ namespace WebCrawler
             services.AddSingleton<INewsDatabaseSettings>(sp =>
                 sp.GetRequiredService<IOptions<NewsDatabaseSettings>>().Value);
             services.AddSingleton<NewsService>();
-            
+
+            // Auto Mapper Configurations
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.AddProfile(new MappingProfile());
+            });
+
+            IMapper mapper = mappingConfig.CreateMapper();
+            services.AddSingleton(mapper);
+
             services.AddControllers().AddNewtonsoftJson(options =>
             {
                 options.SerializerSettings.ContractResolver = new DefaultContractResolver();
@@ -55,7 +65,7 @@ namespace WebCrawler
 
             app.UseAuthorization();
 
-            
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

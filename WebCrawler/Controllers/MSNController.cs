@@ -14,20 +14,27 @@ namespace WebCrawler.Controllers
     public class MSNController : ControllerBase
     {
         private readonly NewsService _newsService;
-
         public MSNController(NewsService newsService)
         {
             _newsService = newsService;
         }
         public string Index()
         {
-            MSNCrawler msn = new MSNCrawler();
-            Dictionary<string, string> pages = msn.GetPages();
-            foreach (var page in pages)
+            try
             {
-                var items = msn.GetItemsPages(page.Key,page.Value);
-                items = items.Select(item => msn.ReadItem(item)).ToList();
-                _newsService.SaveAll(items);
+                MSNCrawler msn = new MSNCrawler();
+                Dictionary<string, string> pages = msn.GetPages();
+                foreach (var page in pages)
+                {
+                    var items = msn.GetItemsPages(page.Key, page.Value);
+                    items = items.Select(item => msn.ReadItem(item)).ToList();
+                    _newsService.SaveAll(items);
+                }                
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
             }
             return "This is my default action...";
         }

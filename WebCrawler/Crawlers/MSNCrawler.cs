@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -45,113 +46,113 @@ namespace WebCrawler.Crawlers
             RemoveNode(document, "//div[@data-section-id='stripe.video']");
             RemoveNode(document, "//div[@data-section-id='stripe.photos']");
 
-            var smallaItems = document.DocumentNode.QuerySelectorAll(".smalla").ToList();
-            foreach (var item in smallaItems)
-            {
-                if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo"))
-                {
-                    continue;
-                }
-                var news = new News();
-                var linkNode = item.QuerySelector("a");
-                var link = WraperUrl(linkNode.Attributes["href"].Value);
-                news.sourceLink = link;
-                var title = linkNode.QuerySelector(".caption > .title").InnerText;
-                news.title = title;
-                var eSource = linkNode.QuerySelectorAll(".caption > .sourcename > img");
-                if (!(eSource.Count() == 0))
-                {
-                    var source = eSource.First().GetAttributeValue("alt", "");
-                    news.source = source.Substring(0, source.Length - 5);
-                }
-                news.catid = catId;
-                items.Add(news);
-            }
+            //var smallaItems = document.DocumentNode.QuerySelectorAll(".smalla").ToList();
+            //foreach (var item in smallaItems)
+            //{
+            //    if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo"))
+            //    {
+            //        continue;
+            //    }
+            //    var news = new News();
+            //    var linkNode = item.QuerySelector("a");
+            //    var link = WraperUrl(linkNode.Attributes["href"].Value);
+            //    news.sourceLink = link;
+            //    var title = linkNode.QuerySelector(".caption > .title").InnerText;
+            //    news.title = title;
+            //    var eSource = linkNode.QuerySelectorAll(".caption > .sourcename > img");
+            //    if (!(eSource.Count() == 0))
+            //    {
+            //        var source = eSource.First().GetAttributeValue("alt", "");
+            //        news.source = source.Substring(0, source.Length - 5);
+            //    }
+            //    news.catid = catId;
+            //    items.Add(news);
+            //}
 
-            var mediumaItems = document.DocumentNode.QuerySelectorAll(".mediuma").ToList();
-            foreach (var item in mediumaItems)
-            {
-                if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo"))
-                {
-                    continue;
-                }
-                var news = new News();
-                var linkNode = item.QuerySelector("a");
-                var link = WraperUrl(linkNode.Attributes["href"].Value);
-                news.sourceLink = link;
-                var title = linkNode.QuerySelector(".caption > .title").InnerText;
-                news.title = title;
-                var eSource = linkNode.QuerySelectorAll(".caption > .sourcename > img");
-                if (!(eSource.Count() == 0))
-                {
-                    var source = eSource.First().GetAttributeValue("alt", "");
-                    news.source = source.Substring(0, source.Length - 5);
-                }
-                news.catid = catId;
-                items.Add(news);
-            }
+            //var mediumaItems = document.DocumentNode.QuerySelectorAll(".mediuma").ToList();
+            //foreach (var item in mediumaItems)
+            //{
+            //    if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo"))
+            //    {
+            //        continue;
+            //    }
+            //    var news = new News();
+            //    var linkNode = item.QuerySelector("a");
+            //    var link = WraperUrl(linkNode.Attributes["href"].Value);
+            //    news.sourceLink = link;
+            //    var title = linkNode.QuerySelector(".caption > .title").InnerText;
+            //    news.title = title;
+            //    var eSource = linkNode.QuerySelectorAll(".caption > .sourcename > img");
+            //    if (!(eSource.Count() == 0))
+            //    {
+            //        var source = eSource.First().GetAttributeValue("alt", "");
+            //        news.source = source.Substring(0, source.Length - 5);
+            //    }
+            //    news.catid = catId;
+            //    items.Add(news);
+            //}
 
-            var hasimageItems = document.DocumentNode.QuerySelectorAll(".swipenav > .hasimage").ToList();
-            foreach (var item in hasimageItems)
-            {
-                var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
-                if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo") || !link.Contains("/en-za/"))
-                {
-                    continue;
-                }
-                var news = new News();
-                news.sourceLink = link;
-                var title = item.QuerySelector(".caption > .title").InnerText;
-                news.title = title;
-                var eSource = item.QuerySelectorAll(".caption > .sourcename > img");
-                if (!(eSource.Count() == 0))
-                {
-                    var source = eSource.First().GetAttributeValue("alt", "");
-                    news.source = source.Substring(0, source.Length - 5);
-                }
-                news.catid = catId;
-                items.Add(news);
-            }
+            //var hasimageItems = document.DocumentNode.QuerySelectorAll(".swipenav > .hasimage").ToList();
+            //foreach (var item in hasimageItems)
+            //{
+            //    var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
+            //    if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo") || !link.Contains("/en-za/"))
+            //    {
+            //        continue;
+            //    }
+            //    var news = new News();
+            //    news.sourceLink = link;
+            //    var title = item.QuerySelector(".caption > .title").InnerText;
+            //    news.title = title;
+            //    var eSource = item.QuerySelectorAll(".caption > .sourcename > img");
+            //    if (!(eSource.Count() == 0))
+            //    {
+            //        var source = eSource.First().GetAttributeValue("alt", "");
+            //        news.source = source.Substring(0, source.Length - 5);
+            //    }
+            //    news.catid = catId;
+            //    items.Add(news);
+            //}
 
-            var tertiaryItems = document.DocumentNode.QuerySelectorAll(".paging-container > .stripecontent > .tertiary > li").ToList();
-            foreach (var item in tertiaryItems)
-            {
-                var news = new News();
-                var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
-                if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo") || link.Contains("/lifestyle/horoscope"))
-                {
-                    continue;
-                }
-                news.sourceLink = link;
-                var eSource = item.QuerySelectorAll("a > div > img");
-                if (!(eSource.Count() == 0))
-                {
-                    var source = eSource.First().GetAttributeValue("alt", "");
-                    news.source = source.Substring(0, source.Length - 5);
-                }
-                news.catid = catId;
-                items.Add(news);
-            }
+            //var tertiaryItems = document.DocumentNode.QuerySelectorAll(".paging-container > .stripecontent > .tertiary > li").ToList();
+            //foreach (var item in tertiaryItems)
+            //{
+            //    var news = new News();
+            //    var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
+            //    if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo") || link.Contains("/lifestyle/horoscope"))
+            //    {
+            //        continue;
+            //    }
+            //    news.sourceLink = link;
+            //    var eSource = item.QuerySelectorAll("a > div > img");
+            //    if (!(eSource.Count() == 0))
+            //    {
+            //        var source = eSource.First().GetAttributeValue("alt", "");
+            //        news.source = source.Substring(0, source.Length - 5);
+            //    }
+            //    news.catid = catId;
+            //    items.Add(news);
+            //}
 
-            var secondaryItems = document.DocumentNode.QuerySelectorAll(".paging-container > .stripecontent > .secondary > li").ToList();
-            foreach (var item in secondaryItems)
-            {
-                var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
-                if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo") || link.Contains("/lifestyle/horoscope"))
-                {
-                    continue;
-                }
-                var news = new News();
-                news.sourceLink = link;
-                var eSource = item.QuerySelectorAll("a > div > img");
-                if (!(eSource.Count() == 0))
-                {
-                    var source = eSource.First().GetAttributeValue("alt", "");
-                    news.source = source.Substring(0, source.Length - 5);
-                }
-                news.catid = catId;
-                items.Add(news);
-            }
+            //var secondaryItems = document.DocumentNode.QuerySelectorAll(".paging-container > .stripecontent > .secondary > li").ToList();
+            //foreach (var item in secondaryItems)
+            //{
+            //    var link = WraperUrl(item.QuerySelector("a").Attributes["href"].Value);
+            //    if (item.GetClasses().Contains("video") || item.GetClasses().Contains("photo") || link.Contains("/lifestyle/horoscope"))
+            //    {
+            //        continue;
+            //    }
+            //    var news = new News();
+            //    news.sourceLink = link;
+            //    var eSource = item.QuerySelectorAll("a > div > img");
+            //    if (!(eSource.Count() == 0))
+            //    {
+            //        var source = eSource.First().GetAttributeValue("alt", "");
+            //        news.source = source.Substring(0, source.Length - 5);
+            //    }
+            //    news.catid = catId;
+            //    items.Add(news);
+            //}
 
             var newlistItems = document.DocumentNode.QuerySelectorAll(".newlist > * li").ToList();
             foreach (var item in newlistItems)
@@ -179,9 +180,7 @@ namespace WebCrawler.Crawlers
                 OverrideEncoding = Encoding.UTF8
             };
             HtmlDocument document = htmlWeb.Load(news.sourceLink);
-            HtmlDocument document2 = htmlWeb.Load(news.sourceLink);
-
-
+           
             news.isEn = true;
             if (news.title == null)
             {
@@ -253,7 +252,12 @@ namespace WebCrawler.Crawlers
                     pListContent.Add(eachNode);
                 }
             }
-
+            var sentences= Regex.Split(firstP, @"(?<=[\.!\?])\s+").ToList();
+            var firstSent = sentences[0];
+            sentences.RemoveAt(0);
+            var anotherSent = String.Join("", sentences);
+            pList.Insert(0,"<p>"+anotherSent+"</p>");
+            news.contentText = firstSent;
             news.contentRaw = String.Join(". ", pList).Replace("&nbsp;", "");
 
             news.contentHtml = "<!DOCTYPE html>" +
@@ -264,19 +268,11 @@ namespace WebCrawler.Crawlers
                     "<body>" +
                     "<h3 class=\"title\">" + news.title + "</h3>" +
                     "<p>Source: " + news.source + "</p>" +
-                    "<p class=\"title\">" + firstP + "</p>" +
+                    "<p class=\"title\">" + news.contentText + "</p>" +
                     "<div class=\"content-detail\">" + news.contentRaw + "</div>" +
                     "</body>" +
                     "</html>";
-
-
-            news.contentText = "";
-            pListContent.Insert(0, HtmlNode.CreateNode("<p>" + firstP + "</p>"));
-            foreach (var text in pListContent)
-            {
-                news.contentText = news.contentText + text.InnerText.Trim();
-            }
-            news.contentText = news.contentText.Replace("&nbsp;", "");
+            
             Thread.Sleep(5000);
             return news;
         }
@@ -308,11 +304,6 @@ namespace WebCrawler.Crawlers
         {
             return Regex.Replace(input, "<.*?>", String.Empty);
         }
-        private static string SanitizeHtml(string html)
-        {
-            string acceptable = "p";
-            string stringPattern = @"</?(?(?=" + acceptable + @")notag|[a-zA-Z0-9]+)(?:\s[a-zA-Z0-9\-]+=?(?:(["",']?).*?\1?)?)*\s*/?>";
-            return Regex.Replace(html, stringPattern, "sausage");
-        }
+      
     }
 }
