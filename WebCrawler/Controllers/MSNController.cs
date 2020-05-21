@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebCrawler.Crawlers;
+using WebCrawler.Services;
 
 namespace WebCrawler.Controllers
 {
@@ -12,6 +13,12 @@ namespace WebCrawler.Controllers
     [ApiController]
     public class MSNController : ControllerBase
     {
+        private readonly NewsService _newsService;
+
+        public MSNController(NewsService newsService)
+        {
+            _newsService = newsService;
+        }
         public string Index()
         {
             MSNCrawler msn = new MSNCrawler();
@@ -20,6 +27,7 @@ namespace WebCrawler.Controllers
             {
                 var items = msn.GetItemsPages(page.Key,page.Value);
                 items = items.Select(item => msn.ReadItem(item)).ToList();
+                _newsService.SaveAll(items);
             }
             return "This is my default action...";
         }

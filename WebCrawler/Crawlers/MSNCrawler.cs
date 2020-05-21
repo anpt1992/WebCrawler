@@ -1,10 +1,13 @@
 ﻿using Fizzler.Systems.HtmlAgilityPack;
 using HtmlAgilityPack;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using WebCrawler.Models;
 
@@ -21,7 +24,7 @@ namespace WebCrawler.Crawlers
             return pages;
         }
         public List<News> GetItemsPages(string catId, string urlTarget)
-        {            
+        {
             HtmlWeb htmlWeb = new HtmlWeb()
             {
                 AutoDetectEncoding = false,
@@ -35,7 +38,7 @@ namespace WebCrawler.Crawlers
 
             return items;
         }
-        public List<News> GetHomePage(HtmlDocument document,string catId)
+        public List<News> GetHomePage(HtmlDocument document, string catId)
         {
             List<News> items = new List<News>();
 
@@ -176,10 +179,13 @@ namespace WebCrawler.Crawlers
                 OverrideEncoding = Encoding.UTF8
             };
             HtmlDocument document = htmlWeb.Load(news.sourceLink);
+            HtmlDocument document2 = htmlWeb.Load(news.sourceLink);
+
+
             news.isEn = true;
             if (news.title == null)
             {
-                news.title = document.DocumentNode.QuerySelector(".collection-headline-flex > h1").InnerText.Trim();
+                news.title = document.DocumentNode.SelectSingleNode("//meta[@property='og:title']").GetAttributeValue("content", null);
             }
             if (news.thumb == null)
             {
@@ -190,6 +196,88 @@ namespace WebCrawler.Crawlers
             news.createdDate = DateTime.ParseExact(strCreatedDate, "yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);
             news.publishedDate = news.createdDate;
 
+            var pList = new List<string>();
+            var pListContent = new List<HtmlNode>();
+            string firstP = "";
+            int i = 0;
+            var eCaption = document.DocumentNode.QuerySelectorAll(".caption");
+            string strCaption = "";
+            if (eCaption.ToList().Count != 0)
+            {
+                strCaption = eCaption.First().OuterHtml;
+                document.DocumentNode.QuerySelector(".caption").Remove();
+            }
+
+            foreach (var eachNode in document.DocumentNode.QuerySelectorAll(".articlebody > p"))
+            {
+                if (eachNode.QuerySelectorAll("strong").ToList().Count != 0)
+                {
+                    continue;
+                }
+                else if (eachNode.QuerySelectorAll("a").ToList().Count != 0)
+                {
+                    var str = StripHTML(eachNode.InnerHtml);
+                    pList.Add("<p>" + str + "</p>");
+                    pListContent.Add(HtmlNode.CreateNode("<p>" + str + "</p>"));
+                }
+                else if (eachNode.QuerySelectorAll("img").ToList().Count != 0)
+                {
+                    if (!(String.IsNullOrEmpty(eachNode.InnerText) && String.IsNullOrWhiteSpace(eachNode.InnerText)))
+                    {
+                        if (i == 0)
+                        {
+                            firstP = eachNode.InnerText.Replace("\n", "").Trim();
+                            i++;
+                        }
+                    }
+
+                    var jsonString = eachNode.QuerySelectorAll("img").First().GetAttributeValue("data-src", null);
+                    jsonString = jsonString.Replace("&quot;", "\"");
+                    var jsonObject = JsonConvert.DeserializeObject<JsonImage>(jsonString);
+                    string imgSrc = "https:" + jsonObject.df.src;
+                    eachNode.RemoveAllChildren();
+                    eachNode.AppendChild(HtmlNode.CreateNode("<img src=\"" + imgSrc + "\"/>"));
+                    eachNode.AppendChild(HtmlNode.CreateNode(strCaption));
+                    pList.Add(eachNode.OuterHtml);
+                }
+                else
+                {
+                    if (i == 0)
+                    {
+                        firstP = eachNode.InnerText.Replace("\n", "").Trim();
+                        i++;
+                        continue;
+                    }
+                    eachNode.Attributes.RemoveAll();
+                    pList.Add(eachNode.OuterHtml);
+                    pListContent.Add(eachNode);
+                }
+            }
+
+            news.contentRaw = String.Join(". ", pList).Replace("&nbsp;", "");
+
+            news.contentHtml = "<!DOCTYPE html>" +
+                    "<html>" +
+                    "<head>" +
+                    "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\">" +
+                    "</head>" +
+                    "<body>" +
+                    "<h3 class=\"title\">" + news.title + "</h3>" +
+                    "<p>Source: " + news.source + "</p>" +
+                    "<p class=\"title\">" + firstP + "</p>" +
+                    "<div class=\"content-detail\">" + news.contentRaw + "</div>" +
+                    "</body>" +
+                    "</html>";
+
+
+            news.contentText = "";
+            pListContent.Insert(0, HtmlNode.CreateNode("<p>" + firstP + "</p>"));
+            foreach (var text in pListContent)
+            {
+                news.contentText = news.contentText + text.InnerText.Trim();
+            }
+            news.contentText = news.contentText.Replace("&nbsp;", "");
+            Thread.Sleep(5000);
             return news;
         }
         private string WraperUrl(string input)
@@ -215,6 +303,16 @@ namespace WebCrawler.Crawlers
             {
                 node.Remove();
             }
+        }
+        public static string StripHTML(string input)
+        {
+            return Regex.Replace(input, "<.*?>", String.Empty);
+        }
+        private static string SanitizeHtml(string html)
+        {
+            string acceptable = "p";
+            string stringPattern = @"</?(?(?=" + acceptable + @")notag|[a-zA-Z0-9]+)(?:\s[a-zA-Z0-9\-]+=?(?:(["",']?).*?\1?)?)*\s*/?>";
+            return Regex.Replace(html, stringPattern, "sausage");
         }
     }
 }

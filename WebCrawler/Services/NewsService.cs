@@ -31,6 +31,15 @@ namespace WebCrawler.Services
             return news;
         }
 
+        public List<News> SaveAll(List<News> news)
+        {
+           
+                _news.InsertMany(news);
+                return news;
+           
+
+        }
+
         public void Update(string id, News newsIn) =>
             _news.ReplaceOne(news => news.id == id, newsIn);
 
