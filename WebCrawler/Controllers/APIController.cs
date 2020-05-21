@@ -29,13 +29,13 @@ namespace WebCrawler.Controllers
         public ActionResult<List<NewsByCategory>> GetArcByCategory([FromQuery] string catid, int page)
         {
             var news = _newsService.GetByCategory(catid);
-           var newsPaged= news.ToPagedList(page, 50).ToList();
+           var newsPaged= Utility.Page(news,50,page);
 
             if (news == null)
             {
                 return NotFound();
             }
-            var nextPage = (newsPaged.Count < 50) ? page : page + 1;
+            var nextPage = (newsPaged.Count() < 50) ? page : page + 1;
             var newsPageCat = _mapper.Map<List<News>, List<NewsByCategory>>(newsPaged);
             newsPageCat.All(i => { i.nextpage = nextPage; return true; });
             return newsPageCat;

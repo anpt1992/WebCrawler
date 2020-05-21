@@ -28,5 +28,11 @@ namespace WebCrawler
             // Return the hexadecimal string.
             return sBuilder.ToString();
         }
+        public static List<T> Page<T>(IEnumerable<T> iQueryable, int page_size, int page_number)
+        {
+            return iQueryable
+                    .Skip(page_size * (page_number - 1))
+                    .Take(page_size).ToList();
+        }
     }
 }

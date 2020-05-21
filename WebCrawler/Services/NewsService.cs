@@ -33,7 +33,7 @@ namespace WebCrawler.Services
             _news.Find<News>(news => news.id == id).FirstOrDefault();
         public List<News> GetByCategory(string catid)
         {
-            return _news.Find(news => true).ToList();
+            return _news.Find(news => (news.catid == catid)).ToList();
         }
         public News Create(News news)
         {
