@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using PagedList;
-using PagedList.Core;
 using WebCrawler.Models;
 using WebCrawler.Services;
 

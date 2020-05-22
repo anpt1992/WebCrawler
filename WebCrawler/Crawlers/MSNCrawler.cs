@@ -1,11 +1,8 @@
 ﻿using Fizzler.Systems.HtmlAgilityPack;
 using HtmlAgilityPack;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.NetworkInformation;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -173,119 +170,98 @@ namespace WebCrawler.Crawlers
         }
         public News ReadItem(News news)
         {
-            HtmlWeb htmlWeb = new HtmlWeb()
+            try
             {
-                AutoDetectEncoding = false,
-                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
-                OverrideEncoding = Encoding.UTF8
-            };
-            HtmlDocument document = htmlWeb.Load(news.sourceLink);
-
-            news.isEn = true;
-            if (news.title == null)
-            {
-                news.title = document.DocumentNode.SelectSingleNode("//meta[@property='og:title']").GetAttributeValue("content", null);
-            }
-            if (news.thumb == null)
-            {
-                news.thumb = document.DocumentNode.SelectSingleNode("//meta[@property='og:image']").GetAttributeValue("content", null);
-            }
-            string strCreatedDate = document.DocumentNode.QuerySelector("time").GetAttributeValue("datetime", null);
-
-            news.createdDate = DateTime.ParseExact(strCreatedDate, "yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);
-            news.publishedDate = news.createdDate;
-
-            var pList = new List<string>();
-            var pListContent = new List<HtmlNode>();
-            string firstP = "";
-            int i = 0;
-            var eCaption = document.DocumentNode.QuerySelectorAll(".caption");
-            string strCaption = "";
-            if (eCaption.ToList().Count != 0)
-            {
-                strCaption = eCaption.First().OuterHtml;
-                document.DocumentNode.QuerySelector(".caption").Remove();
-            }
-
-            var nodeText = document.DocumentNode.QuerySelectorAll(".articlebody > p,.articlebody > blockquote > p");
-
-            foreach (var eachNode in nodeText)
-            {
-                if (eachNode.QuerySelectorAll("strong").ToList().Count != 0)
+                HtmlWeb htmlWeb = new HtmlWeb()
                 {
-                    continue;
+                    AutoDetectEncoding = false,
+                    UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
+                    OverrideEncoding = Encoding.UTF8
+                };
+                HtmlDocument document = htmlWeb.Load(news.sourceLink);
+
+                news.isEn = true;
+                if (news.title == null)
+                {
+                    news.title = document.DocumentNode.SelectSingleNode("//meta[@property='og:title']").GetAttributeValue("content", null);
                 }
-                else if (eachNode.QuerySelectorAll("a").ToList().Count != 0)
+                if (news.thumb == null)
                 {
-                    var str = StripHTML(eachNode.InnerHtml.Replace("\n;", ""));
-                    pList.Add("<p>" + str + "</p>");
-                    pListContent.Add(HtmlNode.CreateNode("<p>" + str + "</p>"));
+                    news.thumb = document.DocumentNode.SelectSingleNode("//meta[@property='og:image']").GetAttributeValue("content", null);
                 }
-                else if (eachNode.QuerySelectorAll("img").ToList().Count != 0)
+                string strCreatedDate = document.DocumentNode.QuerySelector("time").GetAttributeValue("datetime", null);
+
+                news.createdDate = DateTime.ParseExact(strCreatedDate, "yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);
+                news.publishedDate = news.createdDate;
+
+                var articlebody = document.DocumentNode.QuerySelectorAll(".articlebody");
+                var contentRaw = "";
+                if (articlebody.Any())
                 {
-                    string strAfterImage = "";
-                    if (!(String.IsNullOrEmpty(eachNode.InnerText) && String.IsNullOrWhiteSpace(eachNode.InnerText)))
+                    var storyimages = articlebody.First().QuerySelectorAll(".storyimage");
+                    foreach (var storyimage in storyimages)
                     {
-                        if (i == 0)
+                        var jsonString = storyimage.QuerySelector("img").GetAttributeValue("data-src", null);
+                        jsonString = jsonString.Replace("&quot;", "\"");
+
+                        var result = from Match match in Regex.Matches(jsonString, "\"([^\"]*)\"")
+                                     select match.ToString();
+
+                        string imgSrc = WraperUrl(result.Where(i => i.Contains("//img")).First().Trim('\"'));
+
+                        bool hasCaption = false;
+
+                        if (storyimage.QuerySelectorAll(".caption").Any())
                         {
-                            firstP = eachNode.InnerText.Replace("\n", "").Trim();
-                            i++;
+                            hasCaption = true;
                         }
-                        strAfterImage = eachNode.InnerText.Replace("\n", "").Trim();
+
+                        var eCaption = (hasCaption) ? storyimage.QuerySelector(".caption") : null;
+
+                        storyimage.QuerySelector("img").Remove();
+
+                        if (hasCaption)
+                        {
+                            storyimage.QuerySelector(".caption").Remove();
+                        }
+
+
+                        storyimage.AppendChild(HtmlNode.CreateNode("<img src=\"" + imgSrc + "\"/>"));
+
+                        if (eCaption != null)
+                        {
+                            storyimage.AppendChild(eCaption);
+                        }
                     }
 
-                    var jsonString = eachNode.QuerySelectorAll("img").First().GetAttributeValue("data-src", null);
-                    jsonString = jsonString.Replace("&quot;", "\"");
-                    var jsonObject = JsonConvert.DeserializeObject<JsonImage>(jsonString);
-                    string imgSrc = "https:" + jsonObject.df.src;
-                    eachNode.RemoveAllChildren();
-                    eachNode.AppendChild(HtmlNode.CreateNode("<img src=\"" + imgSrc + "\"/>"));
-                    eachNode.AppendChild(HtmlNode.CreateNode(strCaption));
-                    pList.Add(eachNode.OuterHtml.Replace("\n;", ""));
-                    if (!String.IsNullOrEmpty(strAfterImage))
-                    {
-                        pList.Add("<p>" + strAfterImage + "</p>");
-                    }
+                    contentRaw = articlebody.First().OuterHtml;
                 }
-                else if (eachNode.QuerySelectorAll("iframe").ToList().Count != 0)
-                {
-                    pList.Add(eachNode.OuterHtml.Replace("\n;", ""));
-                }
-                else
-                {
-                    if (i == 0)
-                    {
-                        firstP = eachNode.InnerText.Replace("\n", "").Trim();
-                        i++;
-                        continue;
-                    }
-                    //eachNode.Attributes.RemoveAll();
-                    pList.Add(eachNode.OuterHtml.Replace("\n;", ""));
-                    pListContent.Add(eachNode);
-                }
+
+
+                news.contentRaw = contentRaw;
+
+                news.contentHtml = "<!DOCTYPE html>" +
+                        "<html>" +
+                        "<head>" +
+                        "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\">" +
+                        "</head>" +
+                        "<body>" +
+                        "<h3 class=\"title\">" + news.title + "</h3>" +
+                        "<p>Source: " + news.source + "</p>" +
+                        "<p class=\"title\">" + news.contentText + "</p>" +
+                        "<div class=\"content-detail\">" + news.contentRaw + "</div>" +
+                        "</body>" +
+                        "</html>";
+                news.contentText = "";
+
+                Thread.Sleep(5000);
             }
-            var sentences = Regex.Split(firstP, @"(?<=[\.!\?])\s+").ToList();
-            var firstSent = sentences[0];
-            sentences.RemoveAt(0);
-            var anotherSent = String.Join("", sentences);
-            pList.Insert(0, "<p>" + anotherSent + "</p>");
-            news.contentText = firstSent;
-            news.contentRaw = String.Join("", pList).Replace("&nbsp;", "");
+            catch (Exception ex)
+            {
+                throw;
+            }
 
-            news.contentHtml = "<!DOCTYPE html>" +
-                    "<html>" +
-                    "<head>" +
-                    "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\">" +
-                    "</head>" +
-                    "<body>" +
-                    "<h3 class=\"title\">" + news.title + "</h3>" +
-                    "<p>Source: " + news.source + "</p>" +
-                    "<p class=\"title\">" + news.contentText + "</p>" +
-                    "<div class=\"content-detail\">" + news.contentRaw + "</div>" +
-                    "</body>" +
-                    "</html>";
 
-            Thread.Sleep(5000);
             return news;
         }
         private string WraperUrl(string input)
@@ -297,7 +273,7 @@ namespace WebCrawler.Crawlers
                 if (index > 0)
                     input = input.Substring(0, index);
             }
-            else if (input.StartsWith("//static"))
+            else if (input.StartsWith("//static") || input.StartsWith("//img"))
             {
                 input = "https:" + input;
             }
