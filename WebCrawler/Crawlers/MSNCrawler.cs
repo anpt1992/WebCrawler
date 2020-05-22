@@ -40,7 +40,8 @@ namespace WebCrawler.Crawlers
         {
             List<News> items = new List<News>();
 
-            RemoveNode(document, "//div[@data-section-id='stripe.video']");
+         
+            RemoveNode(document, "//div[@data-section-id='stripe.video']");            
             RemoveNode(document, "//div[@data-section-id='stripe.photos']");
 
             var smallaItems = document.DocumentNode.QuerySelectorAll(".smalla").ToList();
@@ -193,6 +194,25 @@ namespace WebCrawler.Crawlers
 
                 news.createdDate = DateTime.ParseExact(strCreatedDate, "yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);
                 news.publishedDate = news.createdDate;
+
+                List<string> removeNodes = new List<string>();
+                removeNodes.Add("strong");
+                removeNodes.Add("script");
+                removeNodes.Add(".readmore");
+                foreach(var node in removeNodes)
+                {
+                    var elements = document.DocumentNode.QuerySelectorAll(node);
+                    foreach (var element in elements)
+                    {
+                        element.RemoveAllChildren();
+                    }
+                }
+                var aTags = document.DocumentNode.QuerySelectorAll("a");
+                foreach (var aTag in aTags)
+                {
+                    aTag.Attributes.RemoveAll();
+                }
+
 
                 var articlebody = document.DocumentNode.QuerySelectorAll(".articlebody");
                 var contentRaw = "";
